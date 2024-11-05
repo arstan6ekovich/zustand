@@ -1,92 +1,102 @@
 "use client";
-import api from "@/type/zusatnd";
-import React, { useEffect, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
-
-interface TodoType {
-  img: string;
-  name: string;
-}
+import zustand from "@/stores/zustand";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 const TodoList = () => {
-  const {
-    register: registerData,
-    handleSubmit: handleSubmitData,
-    reset,
-  } = useForm<TodoType>();
-  const {
-    register: registerEdit,
-    handleSubmit: handleSubmitEdit,
-    reset: resetEdit,
-  } = useForm<TodoType>();
-  const [id, setId] = useState<number | null>(null);
-  const { todos, postTodos, fetchTodos, deleteTodos, patchTodos } = api();
-  console.log(todos);
+  const [image, setImage] = useState("");
+  const [title, setTitle] = useState("");
+  const [imageEdit, setImageEdit] = useState("");
+  const [titleEdit, setTitleEdit] = useState("");
+  const [isEdit, setIsEdit] = useState<number | null>(null);
+  const { PostProduct, GetProduct, DeleteProduct, PatchProduct, product } =
+    zustand();
 
-  const onSubmit: SubmitHandler<TodoType> = async (data) => {
-    await postTodos(data);
-    reset(); // Сброс формы после добавления
+  const onSubmit = async () => {
+    const newProduct = {
+      image,
+      title,
+    };
+    await PostProduct(newProduct);
+    setImage("");
+    setTitle("");
   };
 
-  const onSubmitEdit: SubmitHandler<TodoType> = async (data) => {
-    if (id !== null) {
-      await patchTodos(id, data);
-      setId(null); // Сбросить ID после редактирования
-      resetEdit(); // Сброс формы редактирования
+  const onSubmitEdit = async () => {
+    if (isEdit !== null) {
+      const newProduct = {
+        image: imageEdit,
+        title: titleEdit,
+      };
+      await PatchProduct(isEdit, newProduct);
+      setIsEdit(null);
+      setImageEdit("");
+      setTitleEdit("");
     }
-    setId(null);
   };
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    GetProduct();
+  }, [GetProduct]);
 
   return (
     <div>
-      <h1>TodoList Zustand</h1>
-      <form onSubmit={handleSubmitData(onSubmit)}>
-        <input
-          type="text"
-          placeholder="Image URL"
-          {...registerData("img", { required: true })}
-        />
-        <input
-          type="text"
-          placeholder="Name"
-          {...registerData("name", { required: true })}
-        />
-        <button type="submit">Submit</button>
-      </form>
-      <ul>
-        {todos.map((item, index) =>
-          id === item._id ? (
-            <li key={index}>
-              <form onSubmit={handleSubmitEdit(onSubmitEdit)}>
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  {...registerEdit("img", { required: true })}
-                  defaultValue={item.img}
-                />
-                <input
-                  type="text"
-                  placeholder="Name"
-                  {...registerEdit("name", { required: true })}
-                  defaultValue={item.name}
-                />
-                <button type="submit">Submit</button>
-                <button onClick={() => setId(null)}>Cancel</button>
-              </form>
-            </li>
+      <h1>TodoList</h1>
+      <input
+        type="text"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+        placeholder="Image URL"
+      />
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title"
+      />
+      <button onClick={onSubmit}>Submit</button>
+
+      {product.map((item) => (
+        <div key={item._id ?? item.title}>
+          {isEdit === item._id ? (
+            <>
+              <input
+                type="text"
+                value={imageEdit}
+                onChange={(e) => setImageEdit(e.target.value)}
+                placeholder="Edit Image URL"
+              />
+              <input
+                type="text"
+                value={titleEdit}
+                onChange={(e) => setTitleEdit(e.target.value)}
+                placeholder="Edit Title"
+              />
+              <button onClick={onSubmitEdit}>Submit</button>
+            </>
           ) : (
-            <li key={item._id}>
-              <h2>{item.name}</h2>
-              <button onClick={() => deleteTodos(item._id)}>Delete</button>
-              <button onClick={() => setId(item._id)}>Edit</button>
-            </li>
-          )
-        )}
-      </ul>
+            <div>
+              <Image
+                width={200}
+                height={200}
+                src={item.image}
+                alt={item.title}
+              />
+              <h3>{item.title}</h3>
+              <button onClick={() => DeleteProduct(item._id)}>Delete</button>
+              <button
+                onClick={() => {
+                  setIsEdit(item._id);
+                  setImageEdit(item.image);
+                  setTitleEdit(item.title);
+                }}
+              >
+                Edit
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };

@@ -1,0 +1,13 @@
+html {
+  color-scheme: dark;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: "Gill sans", sans-serif;
+}
+
+img {
+  object-fit: cover;
+}
